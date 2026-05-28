@@ -4,22 +4,18 @@ import org.springframework.stereotype.Service;
 
 import com.mohammed.loadsimulator.dto.LoadTestRequest;
 import com.mohammed.loadsimulator.dto.LoadTestResult;
+import com.mohammed.loadsimulator.engine.LoadTestEngine;
 
 @Service
 public class LoadTestService {
 
+	private final LoadTestEngine loadTestEngine;
+
+	public LoadTestService(LoadTestEngine loadTestEngine) {
+		this.loadTestEngine = loadTestEngine;
+	}
+
 	public LoadTestResult runLoadTest(LoadTestRequest request) {
-		// MVP: hardcoded sample result to verify endpoint wiring and JSON contract.
-		return new LoadTestResult(
-				10_000L,
-				9_850L,
-				150L,
-				42.5,
-				8.0,
-				320.0,
-				95.0,
-				166.67,
-				0.015);
+		return loadTestEngine.execute(request);
 	}
 }
-
