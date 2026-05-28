@@ -6,6 +6,8 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.springframework.stereotype.Component;
 
@@ -24,21 +26,56 @@ public class HttpGetRunner {
 				.build();
 	}
 
-	public SingleRequestOutcome execute(String url) {
-		URI uri;
+	public DurationRunResult runForDuration(String url, int durationSeconds) {
+		HttpRequest httpRequest = buildRequest(url);
+		if (httpRequest == null) {
+			return DurationRunResult.empty();
+		}
+
+		long runStartNanos = System.nanoTime();
+		long deadlineNanos = runStartNanos + Duration.ofSeconds(durationSeconds).toNanos();
+
+		long totalRequests = 0;
+		long successfulRequests = 0;
+		long failedRequests = 0;
+		List<Double> responseTimesMs = new ArrayList<>();
+
+		while (System.nanoTime() < deadlineNanos) {
+			SingleRequestOutcome outcome = executeRequest(httpRequest);
+			totalRequests++;
+			if (outcome.success()) {
+				successfulRequests++;
+			}
+			else {
+				failedRequests++;
+			}
+			responseTimesMs.add(outcome.responseTimeMs());
+		}
+
+		double elapsedSeconds = nanosToSeconds(System.nanoTime() - runStartNanos);
+		return new DurationRunResult(
+				totalRequests,
+				successfulRequests,
+				failedRequests,
+				responseTimesMs,
+				elapsedSeconds);
+	}
+
+	private HttpRequest buildRequest(String url) {
 		try {
-			uri = URI.create(url.trim());
+			URI uri = URI.create(url.trim());
+			return HttpRequest.newBuilder()
+					.uri(uri)
+					.timeout(REQUEST_TIMEOUT)
+					.GET()
+					.build();
 		}
 		catch (IllegalArgumentException ex) {
-			return SingleRequestOutcome.failure(0.0);
+			return null;
 		}
+	}
 
-		HttpRequest httpRequest = HttpRequest.newBuilder()
-				.uri(uri)
-				.timeout(REQUEST_TIMEOUT)
-				.GET()
-				.build();
-
+	private SingleRequestOutcome executeRequest(HttpRequest httpRequest) {
 		long startNanos = System.nanoTime();
 		try {
 			HttpResponse<Void> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.discarding());
@@ -57,5 +94,9 @@ public class HttpGetRunner {
 
 	private static double nanosToMillis(long nanos) {
 		return nanos / 1_000_000.0;
+	}
+
+	private static double nanosToSeconds(long nanos) {
+		return nanos / 1_000_000_000.0;
 	}
 }
