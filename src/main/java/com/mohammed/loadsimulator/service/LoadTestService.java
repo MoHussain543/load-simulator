@@ -22,3 +22,4 @@ public class LoadTestService {
 				0.015);
 	}
 }
+
