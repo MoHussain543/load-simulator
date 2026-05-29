@@ -10,4 +10,8 @@ public record LoadTestResult(
 		double p95ResponseTimeMs,
 		double requestsPerSecond,
 		double errorRate) {
+
+	public static LoadTestResult zero() {
+		return new LoadTestResult(0, 0, 0, 0, 0, 0, 0, 0, 0);
+	}
 }

@@ -1,6 +1,6 @@
 package com.mohammed.loadsimulator.engine;
 
-import java.util.Comparator;
+import java.util.Arrays;
 import java.util.List;
 
 import com.mohammed.loadsimulator.dto.LoadTestResult;
@@ -11,38 +11,69 @@ final class LoadTestMetricsCalculator {
 	}
 
 	static LoadTestResult toLoadTestResult(DurationRunResult run, int durationSeconds) {
-		if (run.totalRequests() == 0) {
-			return new LoadTestResult(0, 0, 0, 0, 0, 0, 0, 0, 0);
+		long totalRequests = run.totalRequests();
+		if (totalRequests == 0) {
+			return LoadTestResult.zero();
 		}
 
-		List<Double> times = run.responseTimesMs();
-		double average = times.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
-		double min = times.stream().mapToDouble(Double::doubleValue).min().orElse(0.0);
-		double max = times.stream().mapToDouble(Double::doubleValue).max().orElse(0.0);
-		double p95 = percentile95(times);
+		LatencyMetrics latency = LatencyMetrics.from(run.responseTimesMs());
 		double requestsPerSecond = durationSeconds > 0
-				? (double) run.totalRequests() / durationSeconds
+				? (double) totalRequests / durationSeconds
 				: 0.0;
-		double errorRate = (double) run.failedRequests() / run.totalRequests() * 100.0;
+		double errorRate = (double) run.failedRequests() / totalRequests * 100.0;
 
 		return new LoadTestResult(
-				run.totalRequests(),
+				totalRequests,
 				run.successfulRequests(),
 				run.failedRequests(),
-				average,
-				min,
-				max,
-				p95,
+				latency.averageMs(),
+				latency.minMs(),
+				latency.maxMs(),
+				latency.p95Ms(),
 				requestsPerSecond,
 				errorRate);
 	}
 
-	private static double percentile95(List<Double> responseTimesMs) {
-		List<Double> sorted = responseTimesMs.stream()
-				.sorted(Comparator.naturalOrder())
-				.toList();
-		int index = (int) Math.ceil(0.95 * sorted.size()) - 1;
-		index = Math.clamp(index, 0, sorted.size() - 1);
-		return sorted.get(index);
+	/**
+	 * Nearest-rank 95th percentile: sort ascending, then pick the smallest value
+	 * at or above the 95% mark (index = ceil(0.95 * n) - 1).
+	 */
+	static double percentile95(List<Double> responseTimesMs) {
+		int count = responseTimesMs.size();
+		if (count == 0) {
+			return 0.0;
+		}
+
+		double[] sorted = new double[count];
+		for (int i = 0; i < count; i++) {
+			sorted[i] = responseTimesMs.get(i);
+		}
+		Arrays.sort(sorted);
+
+		int index = (int) Math.ceil(0.95 * count) - 1;
+		index = Math.clamp(index, 0, count - 1);
+		return sorted[index];
+	}
+
+	private record LatencyMetrics(double averageMs, double minMs, double maxMs, double p95Ms) {
+
+		static LatencyMetrics from(List<Double> responseTimesMs) {
+			if (responseTimesMs.isEmpty()) {
+				return new LatencyMetrics(0.0, 0.0, 0.0, 0.0);
+			}
+
+			double sum = 0.0;
+			double min = Double.POSITIVE_INFINITY;
+			double max = Double.NEGATIVE_INFINITY;
+			for (double responseTimeMs : responseTimesMs) {
+				sum += responseTimeMs;
+				min = Math.min(min, responseTimeMs);
+				max = Math.max(max, responseTimeMs);
+			}
+
+			double average = sum / responseTimesMs.size();
+			double p95 = percentile95(responseTimesMs);
+			return new LatencyMetrics(average, min, max, p95);
+		}
 	}
 }

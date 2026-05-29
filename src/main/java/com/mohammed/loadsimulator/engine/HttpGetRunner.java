@@ -45,26 +45,13 @@ public class HttpGetRunner {
 				futures.add(executor.submit(() -> runVirtualUser(httpRequest, deadlineNanos)));
 			}
 
-			long totalRequests = 0;
-			long successfulRequests = 0;
-			long failedRequests = 0;
-			List<Double> responseTimesMs = new ArrayList<>();
-
+			List<VirtualUserResult> workerResults = new ArrayList<>(virtualUsers);
 			for (Future<VirtualUserResult> future : futures) {
-				VirtualUserResult result = future.get();
-				totalRequests += result.totalRequests();
-				successfulRequests += result.successfulRequests();
-				failedRequests += result.failedRequests();
-				responseTimesMs.addAll(result.responseTimesMs());
+				workerResults.add(future.get());
 			}
 
 			double elapsedSeconds = nanosToSeconds(System.nanoTime() - runStartNanos);
-			return new DurationRunResult(
-					totalRequests,
-					successfulRequests,
-					failedRequests,
-					responseTimesMs,
-					elapsedSeconds);
+			return DurationRunResult.fromWorkers(workerResults, elapsedSeconds);
 		}
 		catch (InterruptedException ex) {
 			Thread.currentThread().interrupt();
@@ -93,7 +80,7 @@ public class HttpGetRunner {
 			responseTimesMs.add(outcome.responseTimeMs());
 		}
 
-		return new VirtualUserResult(totalRequests, successfulRequests, failedRequests, responseTimesMs);
+		return new VirtualUserResult(totalRequests, successfulRequests, failedRequests, List.copyOf(responseTimesMs));
 	}
 
 	private HttpRequest buildRequest(String url) {
@@ -133,12 +120,5 @@ public class HttpGetRunner {
 
 	private static double nanosToSeconds(long nanos) {
 		return nanos / 1_000_000_000.0;
-	}
-
-	private record VirtualUserResult(
-			long totalRequests,
-			long successfulRequests,
-			long failedRequests,
-			List<Double> responseTimesMs) {
 	}
 }
