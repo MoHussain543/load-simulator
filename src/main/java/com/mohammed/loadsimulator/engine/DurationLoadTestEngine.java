@@ -16,7 +16,10 @@ public class DurationLoadTestEngine implements LoadTestEngine {
 
 	@Override
 	public LoadTestResult execute(LoadTestRequest request) {
-		DurationRunResult run = httpGetRunner.runForDuration(request.url(), request.durationSeconds());
-		return LoadTestMetricsCalculator.toLoadTestResult(run);
+		DurationRunResult run = httpGetRunner.runForDuration(
+				request.url(),
+				request.durationSeconds(),
+				request.virtualUsers());
+		return LoadTestMetricsCalculator.toLoadTestResult(run, request.durationSeconds());
 	}
 }
