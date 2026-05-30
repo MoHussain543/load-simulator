@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Load Simulator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="layout">
+      <header class="header">
+        <div class="header-inner">
+          <div class="logo">
+            <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+            </svg>
+            <span class="logo-text">Load Simulator</span>
+          </div>
+          <p class="header-subtitle">HTTP load testing for local services</p>
+        </div>
+      </header>
+
+      <main class="main">
+        <!-- Configuration card -->
+        <section class="card" id="config-card">
+          <div class="card-header">
+            <h2 class="card-title">Configuration</h2>
+            <span class="badge">localhost only</span>
+          </div>
+
+          <form id="load-test-form" novalidate>
+            <div class="form-grid">
+              <div class="field field--full">
+                <label class="label" for="url">Target URL</label>
+                <input
+                  class="input"
+                  id="url"
+                  type="text"
+                  placeholder="http://localhost:8080/actuator/health"
+                  autocomplete="off"
+                  spellcheck="false"
+                />
+                <span class="field-hint">http://localhost or http://127.0.0.1 only</span>
+              </div>
+
+              <div class="field">
+                <label class="label" for="method">HTTP Method</label>
+                <div class="select-wrap">
+                  <select class="input select" id="method" disabled>
+                    <option value="GET">GET</option>
+                  </select>
+                  <svg class="select-chevron" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                  </svg>
+                </div>
+                <span class="field-hint">Only GET is supported</span>
+              </div>
+
+              <div class="field">
+                <label class="label" for="virtualUsers">Virtual Users</label>
+                <input
+                  class="input"
+                  id="virtualUsers"
+                  type="number"
+                  min="1"
+                  max="1000"
+                  value="10"
+                />
+                <span class="field-hint">1 – 1,000 concurrent users</span>
+              </div>
+
+              <div class="field">
+                <label class="label" for="durationSeconds">Duration (seconds)</label>
+                <input
+                  class="input"
+                  id="durationSeconds"
+                  type="number"
+                  min="1"
+                  max="60"
+                  value="5"
+                />
+                <span class="field-hint">1 – 60 seconds</span>
+              </div>
+            </div>
+
+            <div class="form-footer">
+              <button class="btn-run" type="submit" id="run-btn">
+                <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="5 3 19 12 5 21 5 3"/>
+                </svg>
+                Run Test
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <!-- Status / loading area -->
+        <div class="status-area hidden" id="status-area">
+          <div class="loading-card">
+            <div class="spinner"></div>
+            <div class="loading-text">
+              <p class="loading-primary" id="loading-primary">Running load test…</p>
+              <p class="loading-secondary" id="loading-secondary"></p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Error area -->
+        <div class="error-area hidden" id="error-area">
+          <div class="error-card">
+            <svg class="error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <div class="error-content">
+              <p class="error-title" id="error-title">Something went wrong</p>
+              <p class="error-detail" id="error-detail"></p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Results card -->
+        <section class="card results-card hidden" id="results-card">
+          <div class="card-header">
+            <h2 class="card-title">Results</h2>
+            <span class="badge badge--success" id="results-badge">Complete</span>
+          </div>
+
+          <div class="results-meta" id="results-meta"></div>
+
+          <div class="metrics-section">
+            <h3 class="metrics-section-label">Requests</h3>
+            <div class="metrics-grid metrics-grid--3">
+              <div class="metric-card">
+                <span class="metric-label">Total Requests</span>
+                <span class="metric-value" id="m-total">—</span>
+              </div>
+              <div class="metric-card metric-card--success">
+                <span class="metric-label">Successful</span>
+                <span class="metric-value" id="m-success">—</span>
+              </div>
+              <div class="metric-card" id="m-failed-card">
+                <span class="metric-label">Failed</span>
+                <span class="metric-value" id="m-failed">—</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="metrics-section">
+            <h3 class="metrics-section-label">Latency</h3>
+            <div class="metrics-grid metrics-grid--4">
+              <div class="metric-card">
+                <span class="metric-label">Avg Response</span>
+                <span class="metric-value" id="m-avg">—</span>
+                <span class="metric-unit">ms</span>
+              </div>
+              <div class="metric-card">
+                <span class="metric-label">Min Response</span>
+                <span class="metric-value" id="m-min">—</span>
+                <span class="metric-unit">ms</span>
+              </div>
+              <div class="metric-card">
+                <span class="metric-label">Max Response</span>
+                <span class="metric-value" id="m-max">—</span>
+                <span class="metric-unit">ms</span>
+              </div>
+              <div class="metric-card metric-card--accent">
+                <span class="metric-label">P95 Response</span>
+                <span class="metric-value" id="m-p95">—</span>
+                <span class="metric-unit">ms</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="metrics-section">
+            <h3 class="metrics-section-label">Throughput</h3>
+            <div class="metrics-grid metrics-grid--2">
+              <div class="metric-card metric-card--accent">
+                <span class="metric-label">Requests / sec</span>
+                <span class="metric-value" id="m-rps">—</span>
+                <span class="metric-unit">req/s</span>
+              </div>
+              <div class="metric-card" id="m-error-rate-card">
+                <span class="metric-label">Error Rate</span>
+                <span class="metric-value" id="m-error-rate">—</span>
+                <span class="metric-unit">%</span>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <p>Backend running on <code>localhost:8080</code> · localhost targets only</p>
+      </footer>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

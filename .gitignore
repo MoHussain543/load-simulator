@@ -1,4 +1,10 @@
-target/
+# Backend build output
+backend/target/
+
+# Frontend build output
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
 
 # macOS
 .DS_Store
@@ -17,7 +23,6 @@ target/
 # NetBeans
 /nbproject/private/
 /nbbuild/
-/dist/
 /nbdist/
 
 # Logs
