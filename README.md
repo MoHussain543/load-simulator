@@ -211,39 +211,3 @@ Run a single test class:
 ```bash
 mvn test -Dtest=LoadTestRequestValidationTest
 ```
-
-## 📦 Current MVP scope
-
-Included:
-
-- Synchronous `POST /api/load-test`
-- GET-only target requests
-- Localhost-only URL restriction
-- Duration-based repeated requests
-- Virtual-user concurrency with Java virtual threads
-- Aggregated latency and throughput metrics
-- Validation and structured error responses
-- Focused backend unit and integration tests
-
-Not included:
-
-- Frontend UI
-- Authentication or authorization
-- Persistent test history
-- Async job polling
-- Support for POST/PUT/PATCH or custom headers/body
-- Load testing non-localhost targets
-
-## 🔮 Future improvements
-
-- Async job model for longer-running tests
-- Additional HTTP methods, headers, and request bodies
-- Configurable success criteria and thresholds
-- Test run history and export (JSON/CSV)
-- Optional allowlist for staging environments
-- Lightweight dashboard or CLI wrapper
-- Integration tests with an embedded HTTP server
-
-## 📝 Resume-ready description
-
-> Built a Spring Boot load-testing API that runs concurrent HTTP GET workloads using Java virtual threads, validates localhost-only targets for safe local use, and returns aggregated latency and throughput metrics (including p95 and error rate) from a synchronous REST endpoint. Implemented a layered controller/service/engine architecture with request validation, thread-safe result aggregation, and automated tests for validation rules and metrics correctness.
