@@ -1,6 +1,7 @@
 import './style.css'
 
-const BACKEND_URL = 'http://localhost:8080'
+// Empty in dev (Vite proxies /api → backend). Set VITE_API_BASE for preview/production.
+const API_BASE = import.meta.env.VITE_API_BASE ?? ''
 
 interface LoadTestRequest {
   url: string
@@ -94,7 +95,7 @@ function showError(title: string, detail: string): void {
 }
 
 function showResults(result: LoadTestResult, req: LoadTestRequest): void {
-  resultsMeta.innerHTML =
+  resultsMeta.textContent =
     `url: ${req.url}\n` +
     `method: ${req.method}  ·  ` +
     `virtual users: ${req.virtualUsers}  ·  ` +
@@ -110,7 +111,7 @@ function showResults(result: LoadTestResult, req: LoadTestRequest): void {
   mP95.textContent = fmt(result.p95ResponseTimeMs)
 
   mRps.textContent       = fmt(result.requestsPerSecond, 1)
-  mErrorRate.textContent = fmt(result.errorRate * 100, 2)
+  mErrorRate.textContent = fmt(result.errorRate, 2)
 
   // Highlight failed requests and error rate in red if non-zero
   const hasFailed = result.failedRequests > 0
@@ -139,7 +140,7 @@ function clientValidate(): string | null {
 
   if (!url) return 'Target URL is required.'
 
-  const localhostPattern = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?(\/.*)?$/
+  const localhostPattern = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?(\/.*)?$/
   if (!localhostPattern.test(url)) {
     return 'URL must start with http://localhost or http://127.0.0.1.'
   }
@@ -184,7 +185,7 @@ form.addEventListener('submit', async (e) => {
     `${request.durationSeconds}s duration — backend runs the full duration before returning`
 
   try {
-    const response = await fetch(`${BACKEND_URL}/api/load-test`, {
+    const response = await fetch(`${API_BASE}/api/load-test`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(request),
@@ -213,9 +214,10 @@ form.addEventListener('submit', async (e) => {
       err instanceof TypeError && err.message.toLowerCase().includes('fetch')
 
     if (isNetworkError) {
+      const backendHint = API_BASE || 'http://localhost:8080'
       showError(
         'Cannot reach the backend',
-        'Make sure the Spring Boot server is running on http://localhost:8080.\n\n' +
+        `Make sure the Spring Boot server is running at ${backendHint}.\n\n` +
         'From the backend/ directory: ./mvnw spring-boot:run',
       )
     } else {

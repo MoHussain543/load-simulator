@@ -408,6 +408,7 @@ input[type="number"] { -moz-appearance: textfield; }
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   line-height: 1.7;
+  white-space: pre-line;
 }
 
 .metrics-section {
