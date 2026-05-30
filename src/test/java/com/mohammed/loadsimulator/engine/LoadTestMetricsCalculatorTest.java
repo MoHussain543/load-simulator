@@ -49,8 +49,21 @@ class LoadTestMetricsCalculatorTest {
 		assertEquals(3, result.successfulRequests());
 		assertEquals(1, result.failedRequests());
 		assertEquals(25.0, result.averageResponseTimeMs());
+		assertEquals(10.0, result.minResponseTimeMs());
+		assertEquals(40.0, result.maxResponseTimeMs());
+		assertEquals(40.0, result.p95ResponseTimeMs());
 		assertEquals(1.0, result.requestsPerSecond());
 		assertEquals(25.0, result.errorRate());
+	}
+
+	@Test
+	void requestsPerSecondIsZeroWhenConfiguredDurationIsZero() {
+		DurationRunResult run = DurationRunResult.of(
+				2, 2, 0, List.of(5.0, 15.0), 1.0);
+
+		LoadTestResult result = LoadTestMetricsCalculator.toLoadTestResult(run, 0);
+
+		assertEquals(0.0, result.requestsPerSecond());
 	}
 
 	@Test
