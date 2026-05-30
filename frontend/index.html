@@ -12,16 +12,34 @@
     />
   </head>
   <body>
-    <div class="layout">
+    <div class="layout" id="layout">
       <header class="header">
         <div class="header-inner">
-          <div class="logo">
-            <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-            </svg>
-            <span class="logo-text">Load Simulator</span>
+          <div class="header-brand">
+            <div class="header-top-row">
+              <div class="logo">
+                <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                </svg>
+                <span class="logo-text">Load Simulator</span>
+              </div>
+              <button
+                type="button"
+                class="btn-help"
+                id="help-btn"
+                aria-haspopup="dialog"
+                aria-controls="help-modal"
+              >
+                <svg class="btn-help-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                  <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+                How it works
+              </button>
+            </div>
+            <p class="header-subtitle">Test your local API with concurrent requests</p>
           </div>
-          <p class="header-subtitle">HTTP load testing for local services</p>
         </div>
       </header>
 
@@ -36,7 +54,10 @@
           <form id="load-test-form" novalidate>
             <div class="form-grid">
               <div class="field field--full">
-                <label class="label" for="url">Target URL</label>
+                <div class="label-row">
+                  <label class="label" for="url">Target URL</label>
+                  <span class="badge badge--method">GET</span>
+                </div>
                 <input
                   class="input"
                   id="url"
@@ -46,19 +67,7 @@
                   spellcheck="false"
                 />
                 <span class="field-hint">http://localhost or http://127.0.0.1 only</span>
-              </div>
-
-              <div class="field">
-                <label class="label" for="method">HTTP Method</label>
-                <div class="select-wrap">
-                  <select class="input select" id="method" disabled>
-                    <option value="GET">GET</option>
-                  </select>
-                  <svg class="select-chevron" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                  </svg>
-                </div>
-                <span class="field-hint">Only GET is supported</span>
+                <span class="field-error hidden" id="url-error"></span>
               </div>
 
               <div class="field">
@@ -72,6 +81,7 @@
                   value="10"
                 />
                 <span class="field-hint">1 – 1,000 concurrent users</span>
+                <span class="field-error hidden" id="virtualUsers-error"></span>
               </div>
 
               <div class="field">
@@ -85,6 +95,7 @@
                   value="5"
                 />
                 <span class="field-hint">1 – 60 seconds</span>
+                <span class="field-error hidden" id="durationSeconds-error"></span>
               </div>
             </div>
 
@@ -106,6 +117,7 @@
             <div class="loading-text">
               <p class="loading-primary" id="loading-primary">Running load test…</p>
               <p class="loading-secondary" id="loading-secondary"></p>
+              <p class="loading-countdown" id="loading-countdown"></p>
             </div>
           </div>
         </div>
@@ -193,12 +205,101 @@
               </div>
             </div>
           </div>
+
+          <div class="results-footer">
+            <button type="button" class="btn-secondary" id="run-again-btn">
+              <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="23 4 23 10 17 10"/>
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+              </svg>
+              Run again
+            </button>
+          </div>
         </section>
       </main>
 
       <footer class="footer">
-        <p>Backend running on <code>localhost:8080</code> · localhost targets only</p>
+        <p>Localhost targets only · Spring Boot backend</p>
       </footer>
+    </div>
+
+    <!-- Help modal -->
+    <div class="modal-backdrop hidden" id="help-modal-backdrop" aria-hidden="true">
+      <div
+        class="modal"
+        id="help-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="help-modal-title"
+        tabindex="-1"
+      >
+        <div class="modal-header">
+          <h2 class="modal-title" id="help-modal-title">How it works</h2>
+          <button type="button" class="modal-close" id="help-modal-close" aria-label="Close">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <section class="modal-section">
+            <h3 class="modal-section-title">How the test runs</h3>
+            <ol class="modal-steps">
+              <li>You choose a local URL, virtual users, and duration.</li>
+              <li>Each virtual user sends repeated <code>GET</code> requests until the timer expires.</li>
+              <li>The backend waits for the full run, then returns aggregated metrics.</li>
+            </ol>
+          </section>
+
+          <section class="modal-section">
+            <h3 class="modal-section-title">Success vs failure</h3>
+            <p class="modal-copy">
+              HTTP <strong>2xx</strong> responses count as successful.
+              <strong>4xx</strong>, <strong>5xx</strong>, connection errors, and timeouts count as failed.
+            </p>
+          </section>
+
+          <section class="modal-section">
+            <h3 class="modal-section-title">Metric glossary</h3>
+            <dl class="metric-glossary">
+              <div class="glossary-row">
+                <dt>Total Requests</dt>
+                <dd>All completed requests (successful + failed).</dd>
+              </div>
+              <div class="glossary-row">
+                <dt>Successful</dt>
+                <dd>Requests that returned HTTP 2xx.</dd>
+              </div>
+              <div class="glossary-row">
+                <dt>Failed</dt>
+                <dd>Requests that returned 4xx/5xx or could not complete.</dd>
+              </div>
+              <div class="glossary-row">
+                <dt>Avg / Min / Max Response</dt>
+                <dd>Mean, fastest, and slowest response times in milliseconds.</dd>
+              </div>
+              <div class="glossary-row">
+                <dt>P95 Response</dt>
+                <dd>95th percentile latency — 95% of requests were faster than this.</dd>
+              </div>
+              <div class="glossary-row">
+                <dt>Requests / sec</dt>
+                <dd>Throughput: total requests divided by the configured duration.</dd>
+              </div>
+              <div class="glossary-row">
+                <dt>Error Rate</dt>
+                <dd>Percentage of failed requests out of the total.</dd>
+              </div>
+            </dl>
+          </section>
+
+          <p class="modal-note">
+            Only <code>http://localhost</code> and <code>http://127.0.0.1</code> targets are allowed.
+          </p>
+        </div>
+      </div>
     </div>
 
     <script type="module" src="/src/main.ts"></script>
