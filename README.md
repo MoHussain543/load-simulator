@@ -12,15 +12,15 @@ The frontend dashboard submits tests, shows live progress, and displays results.
 
 ### Configuration
 
-![Configuration screen](docs/images/configuration.png)
+<img src="docs/images/configuration.png" alt="Configuration screen" width="800" />
 
 ### How It Works
 
-![How it works modal](docs/images/how-it-works.png)
+<img src="docs/images/how-it-works.png" alt="How it works modal" width="520" />
 
 ### Results
 
-![Results dashboard](docs/images/results.png)
+<img src="docs/images/results.png" alt="Results dashboard" width="700" />
 
 ## Why it is useful
 
